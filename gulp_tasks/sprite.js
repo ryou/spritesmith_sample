@@ -30,6 +30,7 @@ module.exports = () => {
     /* TODO
      * 同期処理の書き方が非常にクソダサなので、ちゃんと書き直す
      * （Promiseとかを使えばいける？）
+     * →関数内最下部のようにPromiseで書いてみたが、駄目だった。理由はまだ理解していない。
     ----------------------------------------------------------*/
     let counter = 0;
 
@@ -52,6 +53,26 @@ module.exports = () => {
           onEnd();
         });
     });
+
+    /*
+    let promises = [];
+
+    folders.forEach((folder) => {
+      const p = new Promise((resolve) => {
+        gulp.src(paths.sprite.src + '/' + folder + '/**\/*.png')
+          .pipe(imageResize({
+            percentage: 50,
+            imageMagick: true,
+          }))
+          .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
+          .on('end', resolve);
+      });
+      promises.push(p);
+    });
+
+    Promise.all(promises).then(cb);
+    */
+
   });
 
   gulp.task('sprite.copy', ['sprite.resize'], (cb) => {
