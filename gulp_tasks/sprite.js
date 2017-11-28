@@ -27,35 +27,7 @@ module.exports = () => {
   });
 
   gulp.task('sprite.resize', ['sprite.clean'], (cb) => {
-    /* TODO
-     * 同期処理の書き方が非常にクソダサなので、ちゃんと書き直す
-     * （Promiseとかを使えばいける？）
-     * →関数内最下部のようにPromiseで書いてみたが、駄目だった。理由はまだ理解していない。
-    ----------------------------------------------------------*/
-    let counter = 0;
-
-    const onEnd = () => {
-      counter += 1;
-
-      if (counter >= folders.length) {
-        cb();
-      }
-    };
-
-    folders.forEach((folder) => {
-      gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
-        .pipe(imageResize({
-          percentage: 50,
-          imageMagick: true,
-        }))
-        .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
-        .on('end', () => {
-          onEnd();
-        });
-    });
-
-    /*
-    let promises = [];
+    const promises = [];
 
     folders.forEach((folder) => {
       const p = new Promise((resolve) => {
@@ -70,57 +42,55 @@ module.exports = () => {
       promises.push(p);
     });
 
-    Promise.all(promises).then(cb);
-    */
+    Promise.all(promises).then(() => {
+      cb();
+    });
 
+    // TODO:以下のコードだとエラーが発生した。
+    // 理由を調べること
+    // Promise.all(promises).then(cb);
   });
 
   gulp.task('sprite.copy', ['sprite.resize'], (cb) => {
-    let counter = 0;
-
-    const onEnd = () => {
-      counter += 1;
-
-      if (counter >= folders.length) {
-        cb();
-      }
-    };
+    const promises = [];
 
     folders.forEach((folder) => {
-      gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
-        .pipe(rename({
-          suffix: '@2x',
-        }))
-        .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
-        .on('end', () => {
-          onEnd();
-        });
+      const p = new Promise((resolve) => {
+        gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
+          .pipe(rename({
+            suffix: '@2x',
+          }))
+          .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
+          .on('end', resolve);
+      });
+      promises.push(p);
+    });
+
+    Promise.all(promises).then(() => {
+      cb();
     });
   });
 
   gulp.task('sprite.sprite', ['sprite.copy'], (cb) => {
-    let counter = 0;
-
-    const onEnd = () => {
-      counter += 1;
-
-      if (counter >= folders.length) {
-        cb();
-      }
-    }
+    const promises = [];
 
     folders.forEach((folder) => {
-      gulp.src(paths.sprite.tmp + '/' + folder + '/**/*.png')
-        .pipe(spritesmith({
-          imgName: folder + '.png',
-          cssName: folder + '.css',
-          retinaImgName: folder + '@2x.png',
-          retinaSrcFilter: [paths.sprite.tmp + '/' + folder + '/**/*@2x.png'],
-        }))
-        .pipe(gulp.dest(paths.sprite.dest))
-        .on('end', () => {
-          onEnd();
-        });
+      const p = new Promise((resolve) => {
+        gulp.src(paths.sprite.tmp + '/' + folder + '/**/*.png')
+          .pipe(spritesmith({
+            imgName: folder + '.png',
+            cssName: folder + '.css',
+            retinaImgName: folder + '@2x.png',
+            retinaSrcFilter: [paths.sprite.tmp + '/' + folder + '/**/*@2x.png'],
+          }))
+          .pipe(gulp.dest(paths.sprite.dest))
+          .on('end', resolve);
+      });
+      promises.push(p);
+    });
+
+    Promise.all(promises).then(() => {
+      cb();
     });
   });
 
