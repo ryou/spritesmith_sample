@@ -16,37 +16,87 @@ const paths = {
   },
 };
 
+const folders = [
+  'circle_icons',
+  'rounded_icons',
+];
+
 module.exports = () => {
   gulp.task('sprite.clean', (cb) => {
     rimraf(paths.sprite.tmp, cb);
   });
 
-  gulp.task('sprite.resize', ['sprite.clean'], () => {
-    return gulp.src(paths.sprite.src + '/**/*.png')
-      .pipe(imageResize({
-        percentage: 50,
-        imageMagick: true,
-      }))
-      .pipe(gulp.dest(paths.sprite.tmp));
+  gulp.task('sprite.resize', ['sprite.clean'], (cb) => {
+    let counter = 0;
+
+    const onEnd = () => {
+      counter += 1;
+
+      if (counter >= folders.length) {
+        cb();
+      }
+    };
+
+    folders.forEach((folder) => {
+      gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
+        .pipe(imageResize({
+          percentage: 50,
+          imageMagick: true,
+        }))
+        .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
+        .on('end', () => {
+          onEnd();
+        });
+    });
   });
 
-  gulp.task('sprite.copy', ['sprite.resize'], () => {
-    return gulp.src(paths.sprite.src + '/**/*.png')
-      .pipe(rename({
-        suffix: '@2x',
-      }))
-      .pipe(gulp.dest(paths.sprite.tmp));
+  gulp.task('sprite.copy', ['sprite.resize'], (cb) => {
+    let counter = 0;
+
+    const onEnd = () => {
+      counter += 1;
+
+      if (counter >= folders.length) {
+        cb();
+      }
+    };
+
+    folders.forEach((folder) => {
+      gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
+        .pipe(rename({
+          suffix: '@2x',
+        }))
+        .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
+        .on('end', () => {
+          onEnd();
+        });
+    });
   });
 
-  gulp.task('sprite.sprite', ['sprite.copy'], () => {
-    return gulp.src(paths.sprite.tmp + '/**/*.png')
-      .pipe(spritesmith({
-        imgName: 'sprite.png',
-        cssName: 'sprite.css',
-        retinaImgName: 'sprite@2x.png',
-        retinaSrcFilter: [paths.sprite.tmp + '/**/*@2x.png'],
-      }))
-      .pipe(gulp.dest(paths.sprite.dest));
+  gulp.task('sprite.sprite', ['sprite.copy'], (cb) => {
+    let counter = 0;
+
+    const onEnd = () => {
+      counter += 1;
+
+      if (counter >= folders.length) {
+        cb();
+      }
+    }
+
+    folders.forEach((folder) => {
+      gulp.src(paths.sprite.tmp + '/' + folder + '/**/*.png')
+        .pipe(spritesmith({
+          imgName: folder + '.png',
+          cssName: folder + '.css',
+          retinaImgName: folder + '@2x.png',
+          retinaSrcFilter: [paths.sprite.tmp + '/' + folder + '/**/*@2x.png'],
+        }))
+        .pipe(gulp.dest(paths.sprite.dest))
+        .on('end', () => {
+          onEnd();
+        });
+    });
   });
 
   gulp.task('sprite.compress', ['sprite.sprite'], () => {
