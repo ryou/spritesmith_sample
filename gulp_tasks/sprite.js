@@ -27,6 +27,10 @@ module.exports = () => {
   });
 
   gulp.task('sprite.resize', ['sprite.clean'], (cb) => {
+    /* TODO
+     * 同期処理の書き方が非常にクソダサなので、ちゃんと書き直す
+     * （Promiseとかを使えばいける？）
+    ----------------------------------------------------------*/
     let counter = 0;
 
     const onEnd = () => {
