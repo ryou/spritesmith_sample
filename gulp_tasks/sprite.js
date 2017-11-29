@@ -27,10 +27,10 @@ module.exports = () => {
   });
 
   gulp.task('sprite.resize', ['sprite.clean'], (cb) => {
-    const promises = [];
-
-    folders.forEach((folder) => {
-      const p = new Promise((resolve) => {
+    // Promiseに関しては以下参照
+    // https://qiita.com/norami_dream/items/0edfca15c15199921a73
+    const resize = (folder) => {
+      return new Promise((resolve) => {
         gulp.src(paths.sprite.src + '/' + folder + '/**\/*.png')
           .pipe(imageResize({
             percentage: 50,
@@ -39,23 +39,22 @@ module.exports = () => {
           .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
           .on('end', resolve);
       });
-      promises.push(p);
-    });
+    };
 
-    Promise.all(promises).then(() => {
-      cb();
-    });
-
-    // TODO:以下のコードだとエラーが発生した。
-    // 理由を調べること
-    // Promise.all(promises).then(cb);
+    Promise.resolve()
+      .then(() => {
+        return Promise.all(folders.map((folder) => {
+          return resize(folder);
+        }))
+      })
+      .then(() => {
+        cb();
+      });
   });
 
   gulp.task('sprite.copy', ['sprite.resize'], (cb) => {
-    const promises = [];
-
-    folders.forEach((folder) => {
-      const p = new Promise((resolve) => {
+    const copy = (folder) => {
+      return new Promise((resolve) => {
         gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
           .pipe(rename({
             suffix: '@2x',
@@ -63,19 +62,22 @@ module.exports = () => {
           .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
           .on('end', resolve);
       });
-      promises.push(p);
-    });
+    };
 
-    Promise.all(promises).then(() => {
-      cb();
-    });
+    Promise.resolve()
+      .then(() => {
+        return Promise.all(folders.map((folder) => {
+          return copy(folder);
+        }));
+      })
+      .then(() => {
+        cb();
+      });
   });
 
   gulp.task('sprite.sprite', ['sprite.copy'], (cb) => {
-    const promises = [];
-
-    folders.forEach((folder) => {
-      const p = new Promise((resolve) => {
+    const sprite = (folder) => {
+      return new Promise((resolve) => {
         gulp.src(paths.sprite.tmp + '/' + folder + '/**/*.png')
           .pipe(spritesmith({
             imgName: folder + '.png',
@@ -86,12 +88,17 @@ module.exports = () => {
           .pipe(gulp.dest(paths.sprite.dest))
           .on('end', resolve);
       });
-      promises.push(p);
-    });
+    };
 
-    Promise.all(promises).then(() => {
-      cb();
-    });
+    Promise.resolve()
+      .then(() => {
+        return Promise.all(folders.map((folder) => {
+          return sprite(folder);
+        }));
+      })
+      .then(() => {
+        cb();
+      });
   });
 
   gulp.task('sprite.compress', ['sprite.sprite'], () => {
