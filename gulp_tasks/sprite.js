@@ -1,6 +1,6 @@
 const gulp = require('gulp');
 const spritesmith = require('gulp.spritesmith');
-const imageResize = require('gulp-image-resize');
+const gm = require('gulp-gm');
 
 const imagemin = require('gulp-imagemin');
 const pngquant = require('imagemin-pngquant');
@@ -32,8 +32,9 @@ module.exports = () => {
     const resize = (folder) => {
       return new Promise((resolve) => {
         gulp.src(paths.sprite.src + '/' + folder + '/**\/*.png')
-          .pipe(imageResize({
-            percentage: 50,
+          .pipe(gm(function(gmfile) {
+            return gmfile.resize('50%', '50%');
+          }, {
             imageMagick: true,
           }))
           .pipe(gulp.dest(paths.sprite.tmp + '/' + folder))
