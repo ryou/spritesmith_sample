@@ -26,7 +26,7 @@ module.exports = () => {
     rimraf(paths.sprite.tmp, cb);
   });
 
-  gulp.task('sprite.resize', ['sprite.clean'], (cb) => {
+  gulp.task('sprite.sprite', ['sprite.clean'], (cb) => {
     // Promiseに関しては以下参照
     // https://qiita.com/norami_dream/items/0edfca15c15199921a73
     const resize = (folder) => {
@@ -40,19 +40,6 @@ module.exports = () => {
           .on('end', resolve);
       });
     };
-
-    Promise.resolve()
-      .then(() => {
-        return Promise.all(folders.map((folder) => {
-          return resize(folder);
-        }))
-      })
-      .then(() => {
-        cb();
-      });
-  });
-
-  gulp.task('sprite.copy', ['sprite.resize'], (cb) => {
     const copy = (folder) => {
       return new Promise((resolve) => {
         gulp.src(paths.sprite.src + '/' + folder + '/**/*.png')
@@ -63,19 +50,6 @@ module.exports = () => {
           .on('end', resolve);
       });
     };
-
-    Promise.resolve()
-      .then(() => {
-        return Promise.all(folders.map((folder) => {
-          return copy(folder);
-        }));
-      })
-      .then(() => {
-        cb();
-      });
-  });
-
-  gulp.task('sprite.sprite', ['sprite.copy'], (cb) => {
     const sprite = (folder) => {
       return new Promise((resolve) => {
         gulp.src(paths.sprite.tmp + '/' + folder + '/**/*.png')
@@ -93,8 +67,18 @@ module.exports = () => {
     Promise.resolve()
       .then(() => {
         return Promise.all(folders.map((folder) => {
+          return resize(folder);
+        }))
+      })
+      .then(() => {
+        return Promise.all(folders.map((folder) => {
+          return copy(folder);
+        }))
+      })
+      .then(() => {
+        return Promise.all(folders.map((folder) => {
           return sprite(folder);
-        }));
+        }))
       })
       .then(() => {
         cb();
